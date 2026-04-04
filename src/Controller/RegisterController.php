@@ -46,6 +46,7 @@ final class RegisterController extends AbstractController
         $user = new User();
         $user->setEmail($data['email']);
         $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
+        $user->setName($data['name']);
 
         $errors = $validator->validate($user);
 
@@ -67,7 +68,8 @@ final class RegisterController extends AbstractController
                 'token' => $token,
                 'user' => [
                     'id' => $user->getId(),
-                    'email' => $user->getEmail()
+                    'email' => $user->getEmail(),
+                    'name' => $user->getName()
                 ]
             ],
             Response::HTTP_CREATED

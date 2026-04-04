@@ -27,7 +27,9 @@ final class MeController extends AbstractController
         return $this->json([
             'id' => $user->getId(),
             'email' => $user->getEmail(),
-            'roles' => $user->getRoles(),
+            'name' => $user->getName(),
+            'profilePicture' => $user->getProfilePicture(),
+            'locale' => $user->getLocale()
         ]);
     }
 
@@ -56,7 +58,6 @@ final class MeController extends AbstractController
         }
 
         if (isset($data['name'])) $user->setName($data['name']);
-        if (isset($data['surname'])) $user->setSurname($data['surname']);
         if (isset($data['profilePicture'])) $user->setProfilePicture($data['profilePicture']);
         if (isset($data['locale'])) $user->setLocale($data['locale']);
 
@@ -78,7 +79,6 @@ final class MeController extends AbstractController
                     'id' => $user->getId(),
                     'email' => $user->getEmail(),
                     'name' => $user->getName(),
-                    'surname' => $user->getSurname(),
                     'profilePicture' => $user->getProfilePicture(),
                     'locale' => $user->getLocale()
                 ]
