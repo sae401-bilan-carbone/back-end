@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Activity;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -14,6 +15,34 @@ class ActivityRepository extends ServiceEntityRepository
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Activity::class);
+    }
+
+    public function getStatsByUser(User $user): array
+    {
+        return $this->createQueryBuilder('a')
+            ->select('a.type, SUM(a.co2) as total_co2')
+            ->where('a.user = :user')
+            ->setParameter('user', $user)
+            ->groupBy('a.type')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function getWeeklyStatsByUser(User $user): array
+    {
+        $connexion = $this->getEntityManager()->getConnection();
+
+        $sql = '
+            SELECT 
+                strftime("%Y-W%W", created_at) as week, 
+                SUM(co2) as total_co2 
+            FROM activity 
+            WHERE user_id = :userId 
+            GROUP BY week 
+            ORDER BY week ASC
+        ';
+
+        return $connexion->executeQuery($sql, ['userId' => $user->getId()])->fetchAllAssociative();
     }
 
 //    /**
