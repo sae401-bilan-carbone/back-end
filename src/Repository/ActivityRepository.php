@@ -34,7 +34,7 @@ class ActivityRepository extends ServiceEntityRepository
 
         $sql = '
             SELECT 
-                strftime("%Y-W%W", created_at) as week, 
+                DATE_FORMAT(created_at, "%Y-W%u") as week, 
                 SUM(co2) as total_co2 
             FROM activity 
             WHERE user_id = :userId 
