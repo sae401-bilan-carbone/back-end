@@ -7,19 +7,19 @@ class CarbonCalculatorService
     private const RATIOS_FOOD = [
         'vegetarian' => 0.5,
         'vegan'      => 0.3,
-        'red_meat'   => 3.5,
-        'white_meat' => 1.1,
+        'red meat'   => 3.5,
+        'white meat' => 1.1,
         'fish'       => 0.8,
     ];
 
     private const RATIOS_SHOPPING = [
-        'daily'     => 0.05, 
+        'courses'     => 0.05, 
         'furniture' => 0.4,  
         'tech'      => 1.2,  
         'fashion'   => 0.6,  
     ];
 
-    private const RATIOS_VEHICLE = [
+    private const RATIOS_VEHICULE = [
         'car'        => 0.15,
         'motorbike'  => 0.1,
         'bus'        => 0.03,
@@ -28,11 +28,11 @@ class CarbonCalculatorService
     ];
 
     private const RATIOS_ENERGY = [
-        'diesel'     => 0.05,
-        'gasoline'   => 0.04,
+        'fuel'   => 0.04,
         'electric'   => 0.01,
+        'natural gaz'   => 0.03,
         'hydrogen'   => 0.005,
-        'none'       => 0, 
+        'any'       => 0, 
     ];
 
     public function calculate(string $type, array $data): float
@@ -47,11 +47,11 @@ class CarbonCalculatorService
 
     private function calculateJourney(array $data): float
     {
-        $vehicle = $data['vehicle'] ?? 'car';
+        $vehicule = $data['vehicule'] ?? $data['vehicle'] ?? 'car';
         $energy  = $data['energy'] ?? 'none';
         $dist    = (float) ($data['distance'] ?? 0);
 
-        $vCoeff = self::RATIOS_VEHICLE[$vehicle] ?? self::RATIOS_VEHICLE['car'];
+        $vCoeff = self::RATIOS_VEHICULE[$vehicule] ?? self::RATIOS_VEHICULE['car'];
         $eCoeff = self::RATIOS_ENERGY[$energy]   ?? 0;
 
         $total = ($vCoeff + $eCoeff) * $dist;

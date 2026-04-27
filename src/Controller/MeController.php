@@ -14,7 +14,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class MeController extends AbstractController
 {
-    #[Route('/api/me', name: 'api_me', methods: ['GET'])]
+    #[Route('/me', name: 'api_me', methods: ['GET'])]
     public function me(#[CurrentUser] ?User $user): JsonResponse
     {
         if (!$user) {
@@ -33,7 +33,7 @@ final class MeController extends AbstractController
         ]);
     }
 
-    #[Route('/api/me', name: 'api_me_update', methods: ['PATCH'])]
+    #[Route('/me', name: 'api_me_update', methods: ['PATCH'])]
     public function update(
         #[CurrentUser] ?User $user,
         Request $req,

@@ -7,9 +7,6 @@ use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
-/**
- * @extends ServiceEntityRepository<Activity>
- */
 class ActivityRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
@@ -25,48 +22,81 @@ class ActivityRepository extends ServiceEntityRepository
             ->setParameter('user', $user)
             ->groupBy('a.type')
             ->getQuery()
-            ->getResult();
+            ->getArrayResult();
     }
 
     public function getWeeklyStatsByUser(User $user): array
     {
-        $connexion = $this->getEntityManager()->getConnection();
+        $conn = $this->getEntityManager()->getConnection();
 
-        $sql = '
-            SELECT 
-                DATE_FORMAT(created_at, "%Y-W%u") as week, 
-                SUM(co2) as total_co2 
-            FROM activity 
-            WHERE user_id = :userId 
-            GROUP BY week 
+        $sql = "
+            SELECT
+                CONCAT(YEAR(created_at), '-W', LPAD(WEEK(created_at, 3), 2, '0')) AS week,
+                SUM(co2) AS total_co2
+            FROM activity
+            WHERE user_id = :userId
+            GROUP BY week
             ORDER BY week ASC
-        ';
+        ";
 
-        return $connexion->executeQuery($sql, ['userId' => $user->getId()])->fetchAllAssociative();
+        $stmt = $conn->executeQuery($sql, [
+            'userId' => $user->getId()
+        ]);
+
+        return array_map(function ($row) {
+            return [
+                'week' => $row['week'],
+                'total_co2' => (float) $row['total_co2'],
+            ];
+        }, $stmt->fetchAllAssociative());
     }
 
-//    /**
-//     * @return Activity[] Returns an array of Activity objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('a')
-//            ->andWhere('a.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('a.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    public function getAverageWeeklyStats(): array
+    {
+        $conn = $this->getEntityManager()->getConnection();
 
-//    public function findOneBySomeField($value): ?Activity
-//    {
-//        return $this->createQueryBuilder('a')
-//            ->andWhere('a.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+        $sql = "
+            SELECT
+                week_label AS week,
+                ROUND(AVG(user_weekly_co2), 2) AS average_co2
+            FROM (
+                SELECT
+                    user_id,
+                    CONCAT(YEAR(created_at), '-W', LPAD(WEEK(created_at, 3), 2, '0')) AS week_label,
+                    SUM(co2) AS user_weekly_co2
+                FROM activity
+                GROUP BY user_id, week_label
+            ) AS weekly_per_user
+            GROUP BY week_label
+            ORDER BY week_label ASC
+        ";
+
+        $stmt = $conn->executeQuery($sql);
+
+        return array_map(function ($row) {
+            return [
+                'week' => $row['week'],
+                'average_co2' => (float) $row['average_co2'],
+            ];
+        }, $stmt->fetchAllAssociative());
+    }
+
+    public function getAverageTotalEmitted(): float
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        $sql = "
+            SELECT ROUND(AVG(user_total), 2) AS avg_total
+            FROM (
+                SELECT user_id, SUM(co2) AS user_total
+                FROM activity
+                GROUP BY user_id
+            ) AS user_totals
+        ";
+
+        $stmt = $conn->executeQuery($sql);
+        $result = $stmt->fetchAssociative();
+
+        return (float) ($result['avg_total'] ?? 0);
+    }
 }

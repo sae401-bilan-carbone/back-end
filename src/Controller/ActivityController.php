@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Activity;
 use App\Entity\User;
+use App\Repository\ActivityRepository;
 use App\Service\CarbonCalculatorService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -15,7 +16,7 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 final class ActivityController extends AbstractController
 {
-    #[Route('/api/activities', name: 'api_activity_create', methods: ['POST'])]
+    #[Route('/activities', name: 'api_activity_create', methods: ['POST'])]
     public function create(
         Request $request,
         #[CurrentUser] ?User $user,
@@ -71,7 +72,7 @@ final class ActivityController extends AbstractController
         }
     }
 
-    #[Route('/api/activities', name: 'api_activity_list', methods: ['GET'])]
+    #[Route('/activities', name: 'api_activity_list', methods: ['GET'])]
     public function list(#[CurrentUser] ?User $user): JsonResponse
     {
         if (!$user) {
@@ -90,5 +91,33 @@ final class ActivityController extends AbstractController
         }
 
         return $this->json($activities);
+    }
+
+    #[Route('/activities/{id}', name: 'api_activity_delete', methods: ['DELETE'])]
+    public function delete(
+        int $id,
+        #[CurrentUser] ?User $user,
+        ActivityRepository $repository,
+        EntityManagerInterface $em
+    ): JsonResponse {
+    
+        if (!$user) {
+            return $this->json(['error' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+        }
+    
+        $activity = $repository->find($id);
+    
+        if (!$activity) {
+            return $this->json(['error' => 'Activité introuvable.'], Response::HTTP_NOT_FOUND);
+        }
+    
+        if ($activity->getUser() !== $user) {
+            return $this->json(['error' => 'Accès refusé.'], Response::HTTP_FORBIDDEN);
+        }
+    
+        $em->remove($activity);
+        $em->flush();
+    
+        return $this->json(null, Response::HTTP_NO_CONTENT);
     }
 }
